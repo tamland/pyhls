@@ -22,7 +22,6 @@ if sys.version_info > (3,):
 else:
     from urlparse import urljoin
 
-
 CSV_PATTERN = re.compile(r'''((?:[^,"' ]|"[^"]*"|'[^']*')+)''')
 INF_DIRECTIVE = '#EXTINF:'
 STREAM_DIRECTIVE = '#EXT-X-STREAM-INF:'
@@ -35,8 +34,10 @@ VariantInfo = namedtuple('VariantInfo', 'url, bandwidth')
 def is_m3u(playlist):
     return playlist.split('\n', 1)[0].strip() == "#EXTM3U"
 
+
 def is_encrypted(playlist):
     return KEY_DIRECTIVE in playlist
+
 
 def is_master(playlist):
     for line in playlist.splitlines():
@@ -45,6 +46,7 @@ def is_master(playlist):
         if line.startswith(INF_DIRECTIVE):
             return False
     return False
+
 
 def get_variants(url, playlist):
     assert is_master(playlist)

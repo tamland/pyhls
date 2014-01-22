@@ -17,10 +17,53 @@ import m3u
 import os
 import requests
 
+
+def dump(url, filename, progress_cb=None, abort_cb=None, max_bandwidth=float('inf')):
+    aborted = False
+    with open(filename, 'wb') as out:
+        strm = get_stream(url, max_bandwidth)
+        fetched = 0
+        for chunk in strm.iter_content():
+            if abort_cb and abort_cb():
+                aborted = True
+                break
+            fetched += len(chunk)
+            if progress_cb:
+                p = int(fetched / float(strm.estimated_size) * 100)
+                progress_cb(p)
+            out.write(chunk)
+    if aborted:
+        os.remove(filename)
+
+
+def get_stream(url, max_bandwidth=float('inf')):
+    session = requests.Session()
+    r = session.get(url)
+    r.raise_for_status()
+    playlist = r.text
+    if m3u.is_master(playlist):
+        streams = m3u.get_variants(url, playlist)
+        url = select_stream(streams, max_bandwidth).url
+        r = session.get(url)
+        r.raise_for_status()
+        playlist = r.text
+    return MediaStream(url, playlist)
+
+
+def select_stream(streams, max_bandwidth=float('inf')):
+    assert len(streams) > 0
+    selected = streams[0]
+    for stream in streams[1:]:
+        if selected.bandwidth < stream.bandwidth <= max_bandwidth:
+            selected = stream
+    return selected
+
+
 def _get_playlist(url):
     r = requests.get(url)
     r.raise_for_status()
     return r.text
+
 
 class MediaStream(object):
     def __init__(self, url, _playlist=None):
@@ -78,7 +121,8 @@ class MediaStream(object):
                     if not chunk:
                         break
                     chunk = cipher.decrypt(chunk)
-                    if req.raw.closed: # end of segment
+                    if req.raw.closed:
+                        # end of segment
                         yield unpad(chunk)
                         break
                     yield chunk
@@ -102,44 +146,3 @@ class SizeEstimator(object):
     
     def final(self):
         self.stream.estimated_size = self.fetched
-
-
-def select_stream(streams, max_bandwidth=float('inf')):
-    assert len(streams) > 0
-    selected = streams[0]
-    for stream in streams[1:]:
-        if selected.bandwidth < stream.bandwidth <= max_bandwidth:
-            selected = stream
-    return selected
-
-
-def get_stream(url, max_bandwidth=float('inf')):
-    session = requests.Session()
-    r = session.get(url)
-    r.raise_for_status()
-    playlist = r.text
-    if m3u.is_master(playlist):
-        streams = m3u.get_variants(url, playlist)
-        url = select_stream(streams, max_bandwidth).url
-        r = session.get(url)
-        r.raise_for_status()
-        playlist = r.text
-    return MediaStream(url, playlist)
-
-
-def dump(url, filename, progress_cb=None, abort_cb=None, max_bandwidth=float('inf')):
-    aborted = False
-    with open(filename, 'wb') as out:
-        strm = get_stream(url, max_bandwidth)
-        fetched = 0
-        for chunk in strm.iter_content():
-            if abort_cb and abort_cb():
-                aborted = True
-                break
-            fetched += len(chunk)
-            if progress_cb:
-                p = int(fetched / float(strm.estimated_size) * 100)
-                progress_cb(p)
-            out.write(chunk)
-    if aborted:
-        os.remove(filename)
