@@ -82,13 +82,6 @@ class MediaStream(object):
         self.segment_urls = m3u.get_segments(url, playlist)
         self.estimated_size = 0
     
-    def _update_est_size(self, i, req):
-        fetched = 0
-        segment_size = int(req.headers['content-length'])
-        fetched += segment_size
-        avg_segment_size = int(fetched / float(i+1))
-        self.estimated_size = avg_segment_size * len(self.segment_urls)
-    
     def _iter_content_direct(self, chunk_size=128):
         def gen():
             size = SizeEstimator(self)
@@ -107,7 +100,6 @@ class MediaStream(object):
         
         from Crypto.Cipher import AES
         unpad = lambda s: s[0:-ord(s[-1])]
-        
         def gen():
             size = SizeEstimator(self)
             for i, url in enumerate(self.segment_urls):
