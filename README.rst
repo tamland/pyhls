@@ -10,6 +10,12 @@ Features:
 Live streaming is currently not supported, only VOD
 
 
+Requirements
+--------
+requests
+pycrypto (optional) if stream is encrypted
+
+
 Examples
 --------
 
