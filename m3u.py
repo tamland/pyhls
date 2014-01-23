@@ -58,7 +58,6 @@ def get_variants(url, playlist):
             info = _attr_list(line)
             stream_url = urljoin(url, next(playlist))
             bw = int(info['BANDWIDTH'])
-            #variants.append((stream_url, bw))
             variants.append(VariantInfo(stream_url, bw))
     return variants
 
