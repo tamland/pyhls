@@ -11,8 +11,9 @@ Live streaming is currently not supported, only VOD
 
 
 Requirements
---------
+------------
 requests
+
 pycrypto (optional) if stream is encrypted
 
 
@@ -22,6 +23,7 @@ Examples
 Stream data:
 
 .. code-block:: python
+
     import sys
     import hls
     
@@ -38,6 +40,7 @@ Stream data:
 Dump to file:
 
 .. code-block:: python
+
     import sys
     import hls
 
